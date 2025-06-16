@@ -1,5 +1,4 @@
-
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -9,13 +8,15 @@ import { toast } from '@/hooks/use-toast';
 import VideoPlayer from '@/components/VideoPlayer';
 import ZonePanel from '@/components/ZonePanel';
 import { Zone, VehicleDetection } from '@/types/monitoring';
+import { useZones } from '@/hooks/useZones';
+import { ApiService } from '@/services/api';
 
 const Monitor = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const { camera } = location.state || {};
   
-  const [zones, setZones] = useState<Zone[]>([]);
+  const { zones, createZone, updateZone, deleteZone } = useZones(camera?.id);
   const [isDrawingZone, setIsDrawingZone] = useState(false);
   const [currentZonePoints, setCurrentZonePoints] = useState<{x: number, y: number}[]>([]);
   const [newZoneName, setNewZoneName] = useState('');
@@ -28,45 +29,15 @@ const Monitor = () => {
       return;
     }
 
-    // Load zones from localStorage
-    const savedZones = localStorage.getItem(`zones_${camera.id}`);
-    if (savedZones) {
-      setZones(JSON.parse(savedZones));
-    }
+    // Connect to WebSocket for real-time detections
+    const ws = ApiService.connectWebSocket(camera.id, (detection) => {
+      setVehicleDetections(prev => [...prev.slice(-4), detection]); // Keep last 5 detections
+    });
 
-    // Start mock vehicle detection
-    startMockDetection();
+    return () => {
+      ApiService.disconnectWebSocket();
+    };
   }, [camera, navigate]);
-
-  const startMockDetection = () => {
-    const interval = setInterval(() => {
-      if (!isPlaying) return;
-      
-      // Generate mock vehicle detections
-      const mockDetections: VehicleDetection[] = [];
-      const vehicleTypes: ('car' | 'truck' | 'motorcycle' | 'bus')[] = ['car', 'truck', 'motorcycle', 'bus'];
-      
-      for (let i = 0; i < Math.floor(Math.random() * 5) + 1; i++) {
-        mockDetections.push({
-          id: `vehicle_${Date.now()}_${i}`,
-          type: vehicleTypes[Math.floor(Math.random() * vehicleTypes.length)],
-          confidence: 0.7 + Math.random() * 0.3,
-          boundingBox: {
-            x: Math.random() * 600,
-            y: Math.random() * 400,
-            width: 50 + Math.random() * 100,
-            height: 30 + Math.random() * 80,
-          },
-          speed: Math.floor(Math.random() * 60) + 10,
-          timestamp: new Date().toISOString(),
-        });
-      }
-      
-      setVehicleDetections(mockDetections);
-    }, 2000);
-
-    return () => clearInterval(interval);
-  };
 
   const handleVideoClick = (event: React.MouseEvent<HTMLDivElement>) => {
     if (!isDrawingZone) return;
@@ -78,7 +49,7 @@ const Monitor = () => {
     setCurrentZonePoints([...currentZonePoints, { x, y }]);
   };
 
-  const finishDrawingZone = () => {
+  const finishDrawingZone = async () => {
     if (currentZonePoints.length < 3) {
       toast({
         title: "Invalid zone",
@@ -97,26 +68,29 @@ const Monitor = () => {
       return;
     }
 
-    const newZone: Zone = {
-      id: Date.now().toString(),
-      name: newZoneName,
-      points: currentZonePoints,
-      color: `#${Math.floor(Math.random()*16777215).toString(16)}`,
-      vehicleCount: 0,
-    };
+    try {
+      await createZone({
+        name: newZoneName,
+        points: currentZonePoints,
+        color: `#${Math.floor(Math.random()*16777215).toString(16)}`,
+        vehicleCount: 0,
+      });
 
-    const updatedZones = [...zones, newZone];
-    setZones(updatedZones);
-    localStorage.setItem(`zones_${camera.id}`, JSON.stringify(updatedZones));
+      setIsDrawingZone(false);
+      setCurrentZonePoints([]);
+      setNewZoneName('');
 
-    setIsDrawingZone(false);
-    setCurrentZonePoints([]);
-    setNewZoneName('');
-
-    toast({
-      title: "Zone created",
-      description: `Zone "${newZone.name}" has been created`,
-    });
+      toast({
+        title: "Zone created",
+        description: `Zone "${newZoneName}" has been created`,
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: error instanceof Error ? error.message : "Failed to create zone",
+        variant: "destructive",
+      });
+    }
   };
 
   const startDrawingZone = () => {
@@ -130,23 +104,32 @@ const Monitor = () => {
     setNewZoneName('');
   };
 
-  const deleteZone = (zoneId: string) => {
-    const updatedZones = zones.filter(zone => zone.id !== zoneId);
-    setZones(updatedZones);
-    localStorage.setItem(`zones_${camera.id}`, JSON.stringify(updatedZones));
-    
-    toast({
-      title: "Zone deleted",
-      description: "Zone has been removed",
-    });
+  const handleDeleteZone = async (zoneId: string) => {
+    try {
+      await deleteZone(zoneId);
+      toast({
+        title: "Zone deleted",
+        description: "Zone has been removed",
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: error instanceof Error ? error.message : "Failed to delete zone",
+        variant: "destructive",
+      });
+    }
   };
 
-  const updateZoneName = (zoneId: string, newName: string) => {
-    const updatedZones = zones.map(zone => 
-      zone.id === zoneId ? { ...zone, name: newName } : zone
-    );
-    setZones(updatedZones);
-    localStorage.setItem(`zones_${camera.id}`, JSON.stringify(updatedZones));
+  const handleUpdateZoneName = async (zoneId: string, newName: string) => {
+    try {
+      await updateZone(zoneId, { name: newName });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: error instanceof Error ? error.message : "Failed to update zone",
+        variant: "destructive",
+      });
+    }
   };
 
   if (!camera) {
@@ -233,8 +216,8 @@ const Monitor = () => {
             <ZonePanel
               zones={zones}
               vehicleDetections={vehicleDetections}
-              onDeleteZone={deleteZone}
-              onUpdateZoneName={updateZoneName}
+              onDeleteZone={handleDeleteZone}
+              onUpdateZoneName={handleUpdateZoneName}
             />
           </div>
         </div>
