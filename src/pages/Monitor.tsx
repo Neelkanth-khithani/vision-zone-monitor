@@ -44,7 +44,7 @@ const Monitor = () => {
       
       // Generate mock vehicle detections
       const mockDetections: VehicleDetection[] = [];
-      const vehicleTypes = ['car', 'truck', 'motorcycle', 'bus'];
+      const vehicleTypes: ('car' | 'truck' | 'motorcycle' | 'bus')[] = ['car', 'truck', 'motorcycle', 'bus'];
       
       for (let i = 0; i < Math.floor(Math.random() * 5) + 1; i++) {
         mockDetections.push({
