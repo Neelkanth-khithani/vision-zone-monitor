@@ -39,18 +39,24 @@ const Login = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 flex items-center justify-center p-4">
-      <div className="absolute inset-0 bg-[url('data:image/svg+xml,%3Csvg width="60" height="60" viewBox="0 0 60 60" xmlns="http://www.w3.org/2000/svg"%3E%3Cg fill="none" fill-rule="evenodd"%3E%3Cg fill="%23ffffff" fill-opacity="0.03"%3E%3Ccircle cx="30" cy="30" r="4"/%3E%3C/g%3E%3C/g%3E%3C/svg%3E')] opacity-50"></div>
+    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 flex items-center justify-center p-4 relative">
+      {/* Decorative background pattern */}
+      <div className="absolute inset-0 opacity-10">
+        <div className="absolute inset-0" style={{
+          backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.1'%3E%3Ccircle cx='30' cy='30' r='4'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`,
+          backgroundSize: '60px 60px'
+        }}></div>
+      </div>
       
       <Card className="w-full max-w-md bg-white/10 backdrop-blur-md border-white/20 shadow-2xl">
-        <CardHeader className="text-center">
+        <CardHeader className="text-center pb-6">
           <div className="flex justify-center mb-4">
             <div className="relative">
               <Shield className="w-12 h-12 text-purple-300" />
               <Eye className="w-6 h-6 text-white absolute -top-1 -right-1" />
             </div>
           </div>
-          <CardTitle className="text-3xl font-bold text-white mb-2">
+          <CardTitle className="text-3xl font-bold text-white mb-2 bg-gradient-to-r from-purple-300 to-blue-300 bg-clip-text text-transparent">
             Vision Zone Monitor
           </CardTitle>
           <p className="text-gray-300">Sign in to your surveillance dashboard</p>
@@ -66,7 +72,7 @@ const Login = () => {
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="Enter your email"
                 required
-                className="bg-white/10 border-white/20 text-white placeholder:text-gray-400 focus:border-purple-400"
+                className="bg-white/10 border-white/20 text-white placeholder:text-gray-400 focus:border-purple-400 backdrop-blur-sm"
               />
             </div>
             <div>
@@ -78,12 +84,12 @@ const Login = () => {
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="Enter your password"
                 required
-                className="bg-white/10 border-white/20 text-white placeholder:text-gray-400 focus:border-purple-400"
+                className="bg-white/10 border-white/20 text-white placeholder:text-gray-400 focus:border-purple-400 backdrop-blur-sm"
               />
             </div>
             <Button 
               type="submit" 
-              className="w-full bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white font-semibold py-3" 
+              className="w-full bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white font-semibold py-3 transition-all duration-300 transform hover:scale-105" 
               disabled={isLoading}
             >
               {isLoading ? 'Signing in...' : 'Sign In'}

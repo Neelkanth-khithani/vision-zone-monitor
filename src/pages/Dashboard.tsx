@@ -77,20 +77,26 @@ const Dashboard = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900">
-      <div className="absolute inset-0 bg-[url('data:image/svg+xml,%3Csvg width="60" height="60" viewBox="0 0 60 60" xmlns="http://www.w3.org/2000/svg"%3E%3Cg fill="none" fill-rule="evenodd"%3E%3Cg fill="%23ffffff" fill-opacity="0.03"%3E%3Ccircle cx="30" cy="30" r="4"/%3E%3C/g%3E%3C/g%3E%3C/svg%3E')] opacity-50"></div>
+    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 relative">
+      {/* Decorative background pattern */}
+      <div className="absolute inset-0 opacity-10">
+        <div className="absolute inset-0" style={{
+          backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.1'%3E%3Ccircle cx='30' cy='30' r='4'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`,
+          backgroundSize: '60px 60px'
+        }}></div>
+      </div>
       
       <div className="relative max-w-7xl mx-auto p-6">
         <div className="flex justify-between items-center mb-10">
           <div>
-            <h1 className="text-4xl font-bold text-white mb-2">
+            <h1 className="text-4xl font-bold text-white mb-2 bg-gradient-to-r from-purple-300 to-blue-300 bg-clip-text text-transparent">
               Vision Zone Monitor
             </h1>
             <p className="text-gray-300 text-lg">
               Welcome back, {user?.fullName}! Manage your CCTV cameras and monitoring zones
             </p>
           </div>
-          <Button onClick={logout} variant="outline" className="bg-white/10 border-white/20 text-white hover:bg-white/20">
+          <Button onClick={logout} variant="outline" className="bg-white/10 border-white/20 text-white hover:bg-white/20 backdrop-blur-sm">
             <LogOut className="w-4 h-4 mr-2" />
             Logout
           </Button>
@@ -99,15 +105,15 @@ const Dashboard = () => {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
           <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
             <DialogTrigger asChild>
-              <Card className="border-dashed border-2 border-white/30 hover:border-white/50 cursor-pointer transition-all duration-300 bg-white/5 hover:bg-white/10 backdrop-blur-sm">
+              <Card className="border-dashed border-2 border-white/30 hover:border-white/50 cursor-pointer transition-all duration-300 bg-white/5 hover:bg-white/10 backdrop-blur-sm group">
                 <CardContent className="flex flex-col items-center justify-center h-64 text-white">
-                  <Plus className="w-12 h-12 mb-4 text-purple-300" />
+                  <Plus className="w-12 h-12 mb-4 text-purple-300 group-hover:scale-110 transition-transform" />
                   <p className="text-lg font-medium">Add New Camera</p>
                   <p className="text-sm text-gray-300">Configure RTSP source</p>
                 </CardContent>
               </Card>
             </DialogTrigger>
-            <DialogContent className="bg-gray-900 border-gray-700 text-white">
+            <DialogContent className="bg-gray-900/95 border-gray-700 text-white backdrop-blur-lg">
               <DialogHeader>
                 <DialogTitle className="text-white">Add New Camera</DialogTitle>
               </DialogHeader>
@@ -119,7 +125,7 @@ const Dashboard = () => {
                     value={newCameraName}
                     onChange={(e) => setNewCameraName(e.target.value)}
                     placeholder="e.g., Front Entrance"
-                    className="bg-gray-800 border-gray-600 text-white"
+                    className="bg-gray-800/50 border-gray-600 text-white backdrop-blur-sm"
                   />
                 </div>
                 <div>
@@ -129,10 +135,10 @@ const Dashboard = () => {
                     value={newCameraRtsp}
                     onChange={(e) => setNewCameraRtsp(e.target.value)}
                     placeholder="rtsp://192.168.1.100/cam"
-                    className="bg-gray-800 border-gray-600 text-white"
+                    className="bg-gray-800/50 border-gray-600 text-white backdrop-blur-sm"
                   />
                 </div>
-                <Button onClick={handleAddCamera} className="w-full bg-purple-600 hover:bg-purple-700">
+                <Button onClick={handleAddCamera} className="w-full bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700">
                   Add Camera
                 </Button>
               </div>
@@ -140,7 +146,7 @@ const Dashboard = () => {
           </Dialog>
 
           {cameras.map((camera) => (
-            <Card key={camera.id} className="group hover:shadow-2xl transition-all duration-300 cursor-pointer bg-white/10 backdrop-blur-sm border-white/20 hover:bg-white/15">
+            <Card key={camera.id} className="group hover:shadow-2xl hover:shadow-purple-500/20 transition-all duration-300 cursor-pointer bg-white/10 backdrop-blur-sm border-white/20 hover:bg-white/15 hover:border-white/30">
               <CardHeader className="pb-3">
                 <div className="flex justify-between items-start">
                   <CardTitle className="text-lg flex items-center text-white">
@@ -163,7 +169,7 @@ const Dashboard = () => {
               <CardContent onClick={() => handleCameraClick(camera)}>
                 <VideoPreview 
                   rtspUrl={camera.rtspUrl} 
-                  className="h-32 mb-3"
+                  className="h-32 mb-3 rounded-lg overflow-hidden"
                 />
                 <p className="text-sm text-gray-300 truncate mb-2 font-mono bg-black/20 px-2 py-1 rounded">
                   {camera.rtspUrl}
