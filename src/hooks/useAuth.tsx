@@ -1,6 +1,5 @@
 
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { ApiService } from '@/services/api';
 
 interface User {
   id: string;
@@ -23,30 +22,39 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    const token = ApiService.getToken();
-    if (token) {
-      // Verify token and get user info
-      setIsLoading(false);
-    } else {
-      setIsLoading(false);
+    const userData = localStorage.getItem('user');
+    if (userData) {
+      setUser(JSON.parse(userData));
     }
+    setIsLoading(false);
   }, []);
 
   const login = async (email: string, password: string) => {
-    const response = await ApiService.login(email, password);
-    ApiService.setToken(response.token);
-    setUser(response.user);
+    // Simple mock login - in production, this would validate against your database
+    const mockUser = {
+      id: '1',
+      email,
+      fullName: 'Demo User'
+    };
+    
+    localStorage.setItem('user', JSON.stringify(mockUser));
+    setUser(mockUser);
   };
 
   const register = async (email: string, password: string, fullName: string) => {
-    const response = await ApiService.register(email, password, fullName);
-    ApiService.setToken(response.token);
-    setUser(response.user);
+    // Simple mock register
+    const mockUser = {
+      id: '1',
+      email,
+      fullName
+    };
+    
+    localStorage.setItem('user', JSON.stringify(mockUser));
+    setUser(mockUser);
   };
 
   const logout = () => {
-    ApiService.clearToken();
-    ApiService.disconnectWebSocket();
+    localStorage.removeItem('user');
     setUser(null);
   };
 

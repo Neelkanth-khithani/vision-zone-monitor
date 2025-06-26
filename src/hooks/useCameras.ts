@@ -1,7 +1,12 @@
 
 import { useState, useEffect } from 'react';
-import { ApiService } from '@/services/api';
-import { CameraConfig } from '@/types/monitoring';
+
+interface CameraConfig {
+  id: string;
+  name: string;
+  rtspUrl: string;
+  dateAdded: string;
+}
 
 export const useCameras = () => {
   const [cameras, setCameras] = useState<CameraConfig[]>([]);
@@ -11,11 +16,13 @@ export const useCameras = () => {
   const fetchCameras = async () => {
     try {
       setIsLoading(true);
-      const response = await ApiService.getCameras();
-      setCameras(response.cameras);
+      // Get cameras from localStorage
+      const storedCameras = localStorage.getItem('cameras');
+      const cameras = storedCameras ? JSON.parse(storedCameras) : [];
+      setCameras(cameras);
       setError(null);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to fetch cameras');
+      setError('Failed to fetch cameras');
     } finally {
       setIsLoading(false);
     }
@@ -23,9 +30,17 @@ export const useCameras = () => {
 
   const createCamera = async (name: string, rtspUrl: string) => {
     try {
-      const response = await ApiService.createCamera(name, rtspUrl);
-      setCameras(prev => [...prev, response.camera]);
-      return response.camera;
+      const newCamera: CameraConfig = {
+        id: Date.now().toString(),
+        name,
+        rtspUrl,
+        dateAdded: new Date().toLocaleDateString()
+      };
+      
+      const updatedCameras = [...cameras, newCamera];
+      localStorage.setItem('cameras', JSON.stringify(updatedCameras));
+      setCameras(updatedCameras);
+      return newCamera;
     } catch (err) {
       throw err;
     }
@@ -33,8 +48,9 @@ export const useCameras = () => {
 
   const deleteCamera = async (cameraId: string) => {
     try {
-      await ApiService.deleteCamera(cameraId);
-      setCameras(prev => prev.filter(cam => cam.id !== cameraId));
+      const updatedCameras = cameras.filter(cam => cam.id !== cameraId);
+      localStorage.setItem('cameras', JSON.stringify(updatedCameras));
+      setCameras(updatedCameras);
     } catch (err) {
       throw err;
     }
