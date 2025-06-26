@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -8,15 +9,13 @@ import { toast } from '@/hooks/use-toast';
 import VideoPlayer from '@/components/VideoPlayer';
 import ZonePanel from '@/components/ZonePanel';
 import { Zone, VehicleDetection } from '@/types/monitoring';
-import { useZones } from '@/hooks/useZones';
-import { ApiService } from '@/services/api';
 
 const Monitor = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const { camera } = location.state || {};
   
-  const { zones, createZone, updateZone, deleteZone } = useZones(camera?.id);
+  const [zones, setZones] = useState<Zone[]>([]);
   const [isDrawingZone, setIsDrawingZone] = useState(false);
   const [currentZonePoints, setCurrentZonePoints] = useState<{x: number, y: number}[]>([]);
   const [newZoneName, setNewZoneName] = useState('');
@@ -29,27 +28,44 @@ const Monitor = () => {
       return;
     }
 
-    // Connect to WebSocket for real-time detections
-    const ws = ApiService.connectWebSocket(camera.id, (detection) => {
-      setVehicleDetections(prev => [...prev.slice(-4), detection]); // Keep last 5 detections
-    });
+    // Load zones from localStorage
+    const storedZones = localStorage.getItem(`zones_${camera.id}`);
+    if (storedZones) {
+      setZones(JSON.parse(storedZones));
+    }
 
-    return () => {
-      ApiService.disconnectWebSocket();
-    };
+    // Simulate vehicle detections
+    const interval = setInterval(() => {
+      const mockDetection: VehicleDetection = {
+        id: Date.now().toString(),
+        type: ['car', 'truck', 'motorcycle', 'bus'][Math.floor(Math.random() * 4)] as any,
+        confidence: 0.8 + Math.random() * 0.2,
+        boundingBox: {
+          x: Math.random() * 600,
+          y: Math.random() * 300,
+          width: 80 + Math.random() * 40,
+          height: 60 + Math.random() * 30
+        },
+        speed: Math.floor(Math.random() * 50) + 20,
+        timestamp: new Date().toISOString()
+      };
+      
+      setVehicleDetections(prev => [...prev.slice(-4), mockDetection]);
+    }, 3000);
+
+    return () => clearInterval(interval);
   }, [camera, navigate]);
 
   const handleVideoClick = (event: React.MouseEvent<HTMLDivElement>) => {
     if (!isDrawingZone) return;
 
-    const rect = event.currentTarget.getBoundingClientRect();
-    const x = event.clientX - rect.left;
-    const y = event.clientY - rect.top;
+    const x = (event as any).clientX;
+    const y = (event as any).clientY;
 
-    setCurrentZonePoints([...currentZonePoints, { x, y }]);
+    setCurrentZonePoints(prev => [...prev, { x, y }]);
   };
 
-  const finishDrawingZone = async () => {
+  const finishDrawingZone = () => {
     if (currentZonePoints.length < 3) {
       toast({
         title: "Invalid zone",
@@ -68,29 +84,26 @@ const Monitor = () => {
       return;
     }
 
-    try {
-      await createZone({
-        name: newZoneName,
-        points: currentZonePoints,
-        color: `#${Math.floor(Math.random()*16777215).toString(16)}`,
-        vehicleCount: 0,
-      });
+    const newZone: Zone = {
+      id: Date.now().toString(),
+      name: newZoneName,
+      points: currentZonePoints,
+      color: `#${Math.floor(Math.random()*16777215).toString(16)}`,
+      vehicleCount: 0,
+    };
 
-      setIsDrawingZone(false);
-      setCurrentZonePoints([]);
-      setNewZoneName('');
+    const updatedZones = [...zones, newZone];
+    setZones(updatedZones);
+    localStorage.setItem(`zones_${camera.id}`, JSON.stringify(updatedZones));
 
-      toast({
-        title: "Zone created",
-        description: `Zone "${newZoneName}" has been created`,
-      });
-    } catch (error) {
-      toast({
-        title: "Error",
-        description: error instanceof Error ? error.message : "Failed to create zone",
-        variant: "destructive",
-      });
-    }
+    setIsDrawingZone(false);
+    setCurrentZonePoints([]);
+    setNewZoneName('');
+
+    toast({
+      title: "Zone created",
+      description: `Zone "${newZoneName}" has been created`,
+    });
   };
 
   const startDrawingZone = () => {
@@ -104,32 +117,23 @@ const Monitor = () => {
     setNewZoneName('');
   };
 
-  const handleDeleteZone = async (zoneId: string) => {
-    try {
-      await deleteZone(zoneId);
-      toast({
-        title: "Zone deleted",
-        description: "Zone has been removed",
-      });
-    } catch (error) {
-      toast({
-        title: "Error",
-        description: error instanceof Error ? error.message : "Failed to delete zone",
-        variant: "destructive",
-      });
-    }
+  const handleDeleteZone = (zoneId: string) => {
+    const updatedZones = zones.filter(zone => zone.id !== zoneId);
+    setZones(updatedZones);
+    localStorage.setItem(`zones_${camera.id}`, JSON.stringify(updatedZones));
+    
+    toast({
+      title: "Zone deleted",
+      description: "Zone has been removed",
+    });
   };
 
-  const handleUpdateZoneName = async (zoneId: string, newName: string) => {
-    try {
-      await updateZone(zoneId, { name: newName });
-    } catch (error) {
-      toast({
-        title: "Error",
-        description: error instanceof Error ? error.message : "Failed to update zone",
-        variant: "destructive",
-      });
-    }
+  const handleUpdateZoneName = (zoneId: string, newName: string) => {
+    const updatedZones = zones.map(zone =>
+      zone.id === zoneId ? { ...zone, name: newName } : zone
+    );
+    setZones(updatedZones);
+    localStorage.setItem(`zones_${camera.id}`, JSON.stringify(updatedZones));
   };
 
   if (!camera) {
@@ -137,27 +141,28 @@ const Monitor = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 p-4">
+    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 p-4">
       <div className="max-w-7xl mx-auto">
         <div className="flex items-center justify-between mb-6">
           <div className="flex items-center">
             <Button
               variant="ghost"
               onClick={() => navigate('/dashboard')}
-              className="mr-4"
+              className="mr-4 text-white hover:bg-white/20"
             >
               <ArrowLeft className="w-4 h-4 mr-2" />
               Back to Dashboard
             </Button>
             <div>
-              <h1 className="text-2xl font-bold">{camera.name}</h1>
-              <p className="text-gray-600">{camera.rtspUrl}</p>
+              <h1 className="text-2xl font-bold text-white">{camera.name}</h1>
+              <p className="text-gray-300">{camera.rtspUrl}</p>
             </div>
           </div>
           <div className="flex items-center space-x-2">
             <Button
               variant="outline"
               onClick={() => setIsPlaying(!isPlaying)}
+              className="bg-white/10 border-white/20 text-white hover:bg-white/20"
             >
               {isPlaying ? <Pause className="w-4 h-4" /> : <Play className="w-4 h-4" />}
             </Button>
@@ -166,9 +171,9 @@ const Monitor = () => {
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           <div className="lg:col-span-2">
-            <Card>
+            <Card className="bg-white/10 backdrop-blur-md border-white/20">
               <CardHeader>
-                <CardTitle>Live Feed</CardTitle>
+                <CardTitle className="text-white">Live Feed</CardTitle>
               </CardHeader>
               <CardContent>
                 <VideoPlayer
@@ -188,13 +193,14 @@ const Monitor = () => {
                         placeholder="Enter zone name"
                         value={newZoneName}
                         onChange={(e) => setNewZoneName(e.target.value)}
+                        className="bg-white/10 border-white/20 text-white placeholder:text-gray-400"
                       />
                     </div>
                     <div className="flex space-x-2">
-                      <Button onClick={finishDrawingZone}>
+                      <Button onClick={finishDrawingZone} className="bg-green-600 hover:bg-green-700">
                         Finish Zone ({currentZonePoints.length} points)
                       </Button>
-                      <Button variant="outline" onClick={cancelDrawingZone}>
+                      <Button variant="outline" onClick={cancelDrawingZone} className="border-white/20 text-white hover:bg-white/20">
                         Cancel
                       </Button>
                     </div>
@@ -203,7 +209,7 @@ const Monitor = () => {
 
                 {!isDrawingZone && (
                   <div className="mt-4">
-                    <Button onClick={startDrawingZone}>
+                    <Button onClick={startDrawingZone} className="bg-blue-600 hover:bg-blue-700">
                       Draw New Zone
                     </Button>
                   </div>

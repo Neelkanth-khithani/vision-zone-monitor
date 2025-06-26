@@ -1,5 +1,5 @@
 
-import React, { useRef, useEffect } from 'react';
+import React, { useRef, useEffect, useState } from 'react';
 import { Zone, VehicleDetection } from '@/types/monitoring';
 
 interface VideoPlayerProps {
@@ -23,30 +23,19 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
 }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const [videoDimensions, setVideoDimensions] = useState({ width: 800, height: 450 });
 
   useEffect(() => {
     const canvas = canvasRef.current;
-    const video = videoRef.current;
-    if (!canvas || !video) return;
+    if (!canvas) return;
 
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
 
-    const drawFrame = () => {
+    const drawOverlay = () => {
       // Clear canvas
       ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-      // Draw video frame (simulated with a gray background)
-      ctx.fillStyle = '#374151';
-      ctx.fillRect(0, 0, canvas.width, canvas.height);
-      
-      // Add some visual elements to simulate video feed
-      ctx.fillStyle = '#6B7280';
-      for (let i = 0; i < 10; i++) {
-        const x = Math.random() * canvas.width;
-        const y = Math.random() * canvas.height;
-        ctx.fillRect(x, y, 20, 20);
-      }
 
       // Draw existing zones
       zones.forEach(zone => {
@@ -104,16 +93,14 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
         ctx.setLineDash([]);
       }
 
-      // Draw vehicle detections (bounding boxes)
+      // Draw vehicle detections
       vehicleDetections.forEach(vehicle => {
         const { x, y, width, height } = vehicle.boundingBox;
         
-        // Draw bounding box
         ctx.strokeStyle = '#10B981';
         ctx.lineWidth = 2;
         ctx.strokeRect(x, y, width, height);
         
-        // Draw vehicle info
         ctx.fillStyle = '#10B981';
         ctx.fillRect(x, y - 25, 120, 25);
         
@@ -123,31 +110,70 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
         ctx.fillText(`${vehicle.type} (${Math.round(vehicle.confidence * 100)}%)`, x + 2, y - 8);
       });
 
-      if (isPlaying) {
-        requestAnimationFrame(drawFrame);
-      }
+      requestAnimationFrame(drawOverlay);
     };
 
-    drawFrame();
-  }, [zones, vehicleDetections, isDrawingZone, currentZonePoints, isPlaying]);
+    drawOverlay();
+  }, [zones, vehicleDetections, isDrawingZone, currentZonePoints]);
+
+  const handleVideoClick = (event: React.MouseEvent<HTMLDivElement>) => {
+    if (!isDrawingZone || !containerRef.current) return;
+
+    const rect = containerRef.current.getBoundingClientRect();
+    const x = ((event.clientX - rect.left) / rect.width) * videoDimensions.width;
+    const y = ((event.clientY - rect.top) / rect.height) * videoDimensions.height;
+
+    onVideoClick({
+      ...event,
+      clientX: x,
+      clientY: y
+    } as any);
+  };
 
   return (
     <div className="relative">
       <div 
+        ref={containerRef}
         className="relative bg-black rounded-lg overflow-hidden cursor-pointer"
-        onClick={onVideoClick}
+        onClick={handleVideoClick}
       >
+        <video
+          ref={videoRef}
+          className="w-full h-auto"
+          width={videoDimensions.width}
+          height={videoDimensions.height}
+          controls={false}
+          autoPlay={isPlaying}
+          muted
+          loop
+          onLoadedMetadata={() => {
+            if (videoRef.current) {
+              setVideoDimensions({
+                width: videoRef.current.videoWidth,
+                height: videoRef.current.videoHeight
+              });
+            }
+          }}
+        >
+          <source src={rtspUrl} type="video/mp4" />
+          {/* Fallback for RTSP - you'll need to convert RTSP to HLS/WebRTC */}
+          Your browser does not support the video tag.
+        </video>
+        
+        {/* Overlay canvas for zones and detections */}
         <canvas
           ref={canvasRef}
-          width={800}
-          height={450}
-          className="w-full h-auto"
+          width={videoDimensions.width}
+          height={videoDimensions.height}
+          className="absolute top-0 left-0 w-full h-full pointer-events-none"
         />
+        
         {isDrawingZone && (
           <div className="absolute top-2 left-2 bg-red-500 text-white px-2 py-1 rounded text-sm">
             Drawing Zone - Click to add points
           </div>
         )}
+        
         {!isPlaying && (
           <div className="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center">
             <div className="text-white text-xl">Paused</div>

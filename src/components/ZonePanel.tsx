@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -72,18 +71,18 @@ const ZonePanel: React.FC<ZonePanelProps> = ({
 
   return (
     <div className="space-y-4">
-      <Card>
+      <Card className="bg-white/10 backdrop-blur-md border-white/20">
         <CardHeader>
-          <CardTitle>Zone Overview</CardTitle>
+          <CardTitle className="text-white">Zone Overview</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="space-y-2">
             <div className="flex justify-between">
-              <span>Total Zones:</span>
+              <span className="text-gray-300">Total Zones:</span>
               <Badge variant="secondary">{zones.length}</Badge>
             </div>
             <div className="flex justify-between">
-              <span>Total Vehicles:</span>
+              <span className="text-gray-300">Total Vehicles:</span>
               <Badge variant="secondary">{vehicleDetections.length}</Badge>
             </div>
           </div>
@@ -95,7 +94,7 @@ const ZonePanel: React.FC<ZonePanelProps> = ({
         const vehicleTypes = getVehicleTypeCount(vehiclesInZone);
         
         return (
-          <Card key={zone.id}>
+          <Card key={zone.id} className="bg-white/10 backdrop-blur-md border-white/20">
             <CardHeader className="pb-3">
               <div className="flex items-center justify-between">
                 {editingZone === zone.id ? (
@@ -103,23 +102,23 @@ const ZonePanel: React.FC<ZonePanelProps> = ({
                     <Input
                       value={editName}
                       onChange={(e) => setEditName(e.target.value)}
-                      className="h-8"
+                      className="h-8 bg-white/10 border-white/20 text-white"
                     />
-                    <Button size="sm" onClick={saveEdit}>
+                    <Button size="sm" onClick={saveEdit} className="bg-green-600 hover:bg-green-700">
                       <Check className="w-3 h-3" />
                     </Button>
-                    <Button size="sm" variant="outline" onClick={cancelEdit}>
+                    <Button size="sm" variant="outline" onClick={cancelEdit} className="border-white/20 text-white hover:bg-white/20">
                       <X className="w-3 h-3" />
                     </Button>
                   </div>
                 ) : (
                   <>
-                    <CardTitle className="text-lg">{zone.name}</CardTitle>
+                    <CardTitle className="text-lg text-white">{zone.name}</CardTitle>
                     <div className="flex space-x-1">
-                      <Button size="sm" variant="ghost" onClick={() => startEditing(zone)}>
+                      <Button size="sm" variant="ghost" onClick={() => startEditing(zone)} className="text-gray-300 hover:text-white hover:bg-white/20">
                         <Edit2 className="w-3 h-3" />
                       </Button>
-                      <Button size="sm" variant="ghost" onClick={() => onDeleteZone(zone.id)}>
+                      <Button size="sm" variant="ghost" onClick={() => onDeleteZone(zone.id)} className="text-red-400 hover:text-red-300 hover:bg-red-500/20">
                         <Trash2 className="w-3 h-3" />
                       </Button>
                     </div>
@@ -130,7 +129,7 @@ const ZonePanel: React.FC<ZonePanelProps> = ({
             <CardContent>
               <div className="space-y-3">
                 <div className="flex justify-between items-center">
-                  <span className="text-sm font-medium">Vehicle Count:</span>
+                  <span className="text-sm font-medium text-gray-300">Vehicle Count:</span>
                   <Badge 
                     variant={vehiclesInZone.length > 0 ? "default" : "secondary"}
                     className="text-sm"
@@ -141,7 +140,7 @@ const ZonePanel: React.FC<ZonePanelProps> = ({
                 
                 {Object.keys(vehicleTypes).length > 0 && (
                   <div>
-                    <div className="text-sm font-medium mb-2">Vehicle Types:</div>
+                    <div className="text-sm font-medium mb-2 text-gray-300">Vehicle Types:</div>
                     <div className="flex flex-wrap gap-1">
                       {Object.entries(vehicleTypes).map(([type, count]) => (
                         <Badge key={type} variant="outline" className="text-xs">
@@ -154,10 +153,10 @@ const ZonePanel: React.FC<ZonePanelProps> = ({
 
                 {vehiclesInZone.length > 0 && (
                   <div>
-                    <div className="text-sm font-medium mb-2">Recent Activity:</div>
+                    <div className="text-sm font-medium mb-2 text-gray-300">Recent Activity:</div>
                     <div className="space-y-1 max-h-32 overflow-y-auto">
                       {vehiclesInZone.slice(0, 3).map(vehicle => (
-                        <div key={vehicle.id} className="text-xs text-gray-600 flex justify-between">
+                        <div key={vehicle.id} className="text-xs text-gray-400 flex justify-between">
                           <span>{vehicle.type}</span>
                           <span>{vehicle.speed} km/h</span>
                         </div>
@@ -185,9 +184,9 @@ const ZonePanel: React.FC<ZonePanelProps> = ({
       })}
 
       {zones.length === 0 && (
-        <Card>
+        <Card className="bg-white/10 backdrop-blur-md border-white/20">
           <CardContent className="text-center py-8">
-            <p className="text-gray-500">No zones configured</p>
+            <p className="text-gray-300">No zones configured</p>
             <p className="text-sm text-gray-400 mt-1">Draw zones on the video to start monitoring</p>
           </CardContent>
         </Card>
