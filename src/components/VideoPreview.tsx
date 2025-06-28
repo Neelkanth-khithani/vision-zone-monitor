@@ -13,12 +13,8 @@ const VideoPreview: React.FC<VideoPreviewProps> = ({ rtspUrl, className = "" }) 
   const [hasError, setHasError] = useState(false);
   const videoRef = useRef<HTMLVideoElement>(null);
 
-  // Convert RTSP to compatible format for web browsers
+  // Use the actual RTSP URL provided
   const getVideoSource = (rtspUrl: string) => {
-    if (rtspUrl.startsWith('rtsp://')) {
-      // For development, use a test video - in production you'd need RTSP to HLS conversion
-      return 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4';
-    }
     return rtspUrl;
   };
 
@@ -37,7 +33,7 @@ const VideoPreview: React.FC<VideoPreviewProps> = ({ rtspUrl, className = "" }) 
         await video.play();
         setIsPlaying(true);
       } catch (error) {
-        console.error('Failed to play video:', error);
+        console.error('Failed to play RTSP stream:', error);
         setHasError(true);
       } finally {
         setIsLoading(false);
@@ -86,7 +82,7 @@ const VideoPreview: React.FC<VideoPreviewProps> = ({ rtspUrl, className = "" }) 
             playsInline
             crossOrigin="anonymous"
           >
-            <source src={getVideoSource(rtspUrl)} type="video/mp4" />
+            <source src={getVideoSource(rtspUrl)} />
           </video>
           <div className="absolute top-2 left-2 bg-red-500 text-white px-2 py-1 rounded text-xs font-semibold">
             LIVE
@@ -94,18 +90,13 @@ const VideoPreview: React.FC<VideoPreviewProps> = ({ rtspUrl, className = "" }) 
           <div className="absolute bottom-2 left-2 text-white text-xs bg-black bg-opacity-50 px-2 py-1 rounded truncate max-w-[80%]">
             {rtspUrl}
           </div>
-          {rtspUrl.startsWith('rtsp://') && (
-            <div className="absolute bottom-2 right-2 bg-orange-500 text-white px-2 py-1 rounded text-xs">
-              Preview
-            </div>
-          )}
         </div>
       ) : (
         <div className="w-full h-full flex items-center justify-center bg-gray-800">
           {hasError ? (
             <div className="flex flex-col items-center text-red-400">
               <AlertTriangle className="w-8 h-8 mb-2" />
-              <span className="text-xs text-center">Stream Error</span>
+              <span className="text-xs text-center">RTSP Stream Error</span>
             </div>
           ) : (
             <Camera className="w-8 h-8 text-gray-400" />

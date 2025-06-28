@@ -27,14 +27,8 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
   const [videoError, setVideoError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  // Convert RTSP to compatible format for web browsers
+  // Use the actual RTSP URL provided
   const getVideoSource = (rtspUrl: string) => {
-    // For development, we'll use a test video or HLS stream
-    // In production, you'd need a media server like Wowza, nginx-rtmp, or Node Media Server
-    if (rtspUrl.startsWith('rtsp://')) {
-      // For now, return a test video URL - you'll need to implement RTSP to HLS conversion
-      return 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4';
-    }
     return rtspUrl;
   };
 
@@ -59,7 +53,7 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
 
     const handleError = (e: Event) => {
       setIsLoading(false);
-      setVideoError('Failed to load video stream. Please check the RTSP URL.');
+      setVideoError('Failed to load RTSP stream. Please check the URL or ensure your browser supports this stream format.');
       console.error('Video error:', e);
     };
 
@@ -212,7 +206,7 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
       >
         {isLoading && (
           <div className="absolute inset-0 bg-black bg-opacity-75 flex items-center justify-center z-10">
-            <div className="text-white text-lg">Loading video stream...</div>
+            <div className="text-white text-lg">Loading RTSP stream...</div>
           </div>
         )}
 
@@ -222,7 +216,7 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
               <div className="text-lg font-semibold mb-2">Stream Error</div>
               <div className="text-sm">{videoError}</div>
               <div className="text-xs mt-2 text-gray-300">
-                Note: RTSP streams need conversion to work in browsers
+                RTSP URL: {rtspUrl}
               </div>
             </div>
           </div>
@@ -239,7 +233,7 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
           playsInline
           crossOrigin="anonymous"
         >
-          <source src={getVideoSource(rtspUrl)} type="video/mp4" />
+          <source src={getVideoSource(rtspUrl)} />
           Your browser does not support the video tag.
         </video>
         
@@ -263,11 +257,9 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
           </div>
         )}
 
-        {rtspUrl.startsWith('rtsp://') && (
-          <div className="absolute bottom-2 right-2 bg-orange-500 text-white px-2 py-1 rounded text-xs">
-            RTSP Preview (requires media server for production)
-          </div>
-        )}
+        <div className="absolute bottom-2 right-2 bg-blue-500 text-white px-2 py-1 rounded text-xs">
+          RTSP: {rtspUrl.slice(0, 30)}...
+        </div>
       </div>
     </div>
   );
