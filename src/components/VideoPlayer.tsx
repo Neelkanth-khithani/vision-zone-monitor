@@ -1,4 +1,3 @@
-
 import React, { useRef, useEffect, useState } from 'react';
 import { Zone, VehicleDetection } from '@/types/monitoring';
 
@@ -25,6 +24,80 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
   const videoRef = useRef<HTMLVideoElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const [videoDimensions, setVideoDimensions] = useState({ width: 800, height: 450 });
+  const [videoError, setVideoError] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+
+  // Convert RTSP to compatible format for web browsers
+  const getVideoSource = (rtspUrl: string) => {
+    // For development, we'll use a test video or HLS stream
+    // In production, you'd need a media server like Wowza, nginx-rtmp, or Node Media Server
+    if (rtspUrl.startsWith('rtsp://')) {
+      // For now, return a test video URL - you'll need to implement RTSP to HLS conversion
+      return 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4';
+    }
+    return rtspUrl;
+  };
+
+  useEffect(() => {
+    const video = videoRef.current;
+    if (!video) return;
+
+    const handleLoadStart = () => {
+      setIsLoading(true);
+      setVideoError(null);
+    };
+
+    const handleCanPlay = () => {
+      setIsLoading(false);
+      if (video.videoWidth && video.videoHeight) {
+        setVideoDimensions({
+          width: video.videoWidth,
+          height: video.videoHeight
+        });
+      }
+    };
+
+    const handleError = (e: Event) => {
+      setIsLoading(false);
+      setVideoError('Failed to load video stream. Please check the RTSP URL.');
+      console.error('Video error:', e);
+    };
+
+    const handleLoadedMetadata = () => {
+      if (video.videoWidth && video.videoHeight) {
+        setVideoDimensions({
+          width: video.videoWidth,
+          height: video.videoHeight
+        });
+      }
+    };
+
+    video.addEventListener('loadstart', handleLoadStart);
+    video.addEventListener('canplay', handleCanPlay);
+    video.addEventListener('error', handleError);
+    video.addEventListener('loadedmetadata', handleLoadedMetadata);
+
+    return () => {
+      video.removeEventListener('loadstart', handleLoadStart);
+      video.removeEventListener('canplay', handleCanPlay);
+      video.removeEventListener('error', handleError);
+      video.removeEventListener('loadedmetadata', handleLoadedMetadata);
+    };
+  }, [rtspUrl]);
+
+  useEffect(() => {
+    const video = videoRef.current;
+    if (!video) return;
+
+    if (isPlaying) {
+      video.play().catch(e => {
+        console.error('Failed to play video:', e);
+        setVideoError('Failed to play video stream');
+      });
+    } else {
+      video.pause();
+    }
+  }, [isPlaying]);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -137,26 +210,36 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
         className="relative bg-black rounded-lg overflow-hidden cursor-pointer"
         onClick={handleVideoClick}
       >
+        {isLoading && (
+          <div className="absolute inset-0 bg-black bg-opacity-75 flex items-center justify-center z-10">
+            <div className="text-white text-lg">Loading video stream...</div>
+          </div>
+        )}
+
+        {videoError && (
+          <div className="absolute inset-0 bg-red-900 bg-opacity-75 flex items-center justify-center z-10">
+            <div className="text-white text-center p-4">
+              <div className="text-lg font-semibold mb-2">Stream Error</div>
+              <div className="text-sm">{videoError}</div>
+              <div className="text-xs mt-2 text-gray-300">
+                Note: RTSP streams need conversion to work in browsers
+              </div>
+            </div>
+          </div>
+        )}
+
         <video
           ref={videoRef}
           className="w-full h-auto"
           width={videoDimensions.width}
           height={videoDimensions.height}
           controls={false}
-          autoPlay={isPlaying}
+          autoPlay={false}
           muted
-          loop
-          onLoadedMetadata={() => {
-            if (videoRef.current) {
-              setVideoDimensions({
-                width: videoRef.current.videoWidth,
-                height: videoRef.current.videoHeight
-              });
-            }
-          }}
+          playsInline
+          crossOrigin="anonymous"
         >
-          <source src={rtspUrl} type="video/mp4" />
-          {/* Fallback for RTSP - you'll need to convert RTSP to HLS/WebRTC */}
+          <source src={getVideoSource(rtspUrl)} type="video/mp4" />
           Your browser does not support the video tag.
         </video>
         
@@ -174,9 +257,15 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
           </div>
         )}
         
-        {!isPlaying && (
+        {!isPlaying && !isLoading && !videoError && (
           <div className="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center">
             <div className="text-white text-xl">Paused</div>
+          </div>
+        )}
+
+        {rtspUrl.startsWith('rtsp://') && (
+          <div className="absolute bottom-2 right-2 bg-orange-500 text-white px-2 py-1 rounded text-xs">
+            RTSP Preview (requires media server for production)
           </div>
         )}
       </div>
