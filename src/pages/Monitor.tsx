@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -33,27 +32,6 @@ const Monitor = () => {
     if (storedZones) {
       setZones(JSON.parse(storedZones));
     }
-
-    // Simulate vehicle detections
-    const interval = setInterval(() => {
-      const mockDetection: VehicleDetection = {
-        id: Date.now().toString(),
-        type: ['car', 'truck', 'motorcycle', 'bus'][Math.floor(Math.random() * 4)] as any,
-        confidence: 0.8 + Math.random() * 0.2,
-        boundingBox: {
-          x: Math.random() * 600,
-          y: Math.random() * 300,
-          width: 80 + Math.random() * 40,
-          height: 60 + Math.random() * 30
-        },
-        speed: Math.floor(Math.random() * 50) + 20,
-        timestamp: new Date().toISOString()
-      };
-      
-      setVehicleDetections(prev => [...prev.slice(-4), mockDetection]);
-    }, 3000);
-
-    return () => clearInterval(interval);
   }, [camera, navigate]);
 
   const handleVideoClick = (event: React.MouseEvent<HTMLDivElement>) => {

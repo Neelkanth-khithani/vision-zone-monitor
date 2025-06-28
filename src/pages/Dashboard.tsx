@@ -169,7 +169,7 @@ const Dashboard = () => {
               <CardContent onClick={() => handleCameraClick(camera)}>
                 <VideoPreview 
                   rtspUrl={camera.rtspUrl} 
-                  className="h-32 mb-3 rounded-lg overflow-hidden"
+                  className="h-40 mb-3 rounded-lg overflow-hidden"
                 />
                 <p className="text-sm text-gray-300 truncate mb-2 font-mono bg-black/20 px-2 py-1 rounded">
                   {camera.rtspUrl}
