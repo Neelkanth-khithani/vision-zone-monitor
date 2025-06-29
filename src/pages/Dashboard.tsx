@@ -85,15 +85,15 @@ const Dashboard = () => {
           backgroundSize: '60px 60px'
         }}></div>
       </div>
-      
+
       <div className="relative max-w-7xl mx-auto p-6">
         <div className="flex justify-between items-center mb-10">
           <div>
-            <h1 className="text-4xl font-bold text-white mb-2 bg-gradient-to-r from-purple-300 to-blue-300 bg-clip-text text-transparent">
-              Vision Zone Monitor
-            </h1>
+            <h3 className="text-4xl font-bold text-white mb-2 bg-gradient-to-r from-purple-300 to-blue-300 bg-clip-text text-transparent">
+              IP Camera Dashboard
+            </h3>
             <p className="text-gray-300 text-lg">
-              Welcome back, {user?.fullName}! Manage your CCTV cameras and monitoring zones
+              Monitor using RTSP stream
             </p>
           </div>
           <Button onClick={logout} variant="outline" className="bg-white/10 border-white/20 text-white hover:bg-white/20 backdrop-blur-sm">
@@ -124,8 +124,9 @@ const Dashboard = () => {
                     id="cameraName"
                     value={newCameraName}
                     onChange={(e) => setNewCameraName(e.target.value)}
-                    placeholder="e.g., Front Entrance"
+                    placeholder="e.g., Chembur West Zone"
                     className="bg-gray-800/50 border-gray-600 text-white backdrop-blur-sm"
+                    autoComplete='off'
                   />
                 </div>
                 <div>
@@ -134,8 +135,9 @@ const Dashboard = () => {
                     id="rtspUrl"
                     value={newCameraRtsp}
                     onChange={(e) => setNewCameraRtsp(e.target.value)}
-                    placeholder="rtsp://192.168.1.100/cam"
+                    placeholder="rtsp://"
                     className="bg-gray-800/50 border-gray-600 text-white backdrop-blur-sm"
+                    autoComplete='off'
                   />
                 </div>
                 <Button onClick={handleAddCamera} className="w-full bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700">
@@ -167,8 +169,8 @@ const Dashboard = () => {
                 </div>
               </CardHeader>
               <CardContent onClick={() => handleCameraClick(camera)}>
-                <VideoPreview 
-                  rtspUrl={camera.rtspUrl} 
+                <VideoPreview
+                  rtspUrl={camera.rtspUrl}
                   className="h-40 mb-3 rounded-lg overflow-hidden"
                 />
                 <p className="text-sm text-gray-300 truncate mb-2 font-mono bg-black/20 px-2 py-1 rounded">
